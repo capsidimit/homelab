@@ -1,0 +1,181 @@
+name: "gitlab"
+services:
+  # This is GITLAB Server instance
+  gitlab:
+    container_name: gitlab
+    image: "gitlab/gitlab-ce:18.3.2-ce.0"
+    restart: unless-stopped
+    hostname: "gitlab.example.com"
+    extra_hosts:
+      - "gitlab.example.com:172.20.0.10"
+      - "maildev.example.ru:172.20.0.5"
+      - "registry.example.com:172.20.0.10"
+      - "ldap.example.com:172.20.0.18"
+    networks:
+      net:
+        ipv4_address: 172.20.0.10
+    healthcheck:
+      test: ["CMD", "/usr/local/sbin/healthcheck"]
+      interval: 15m
+      timeout: 100s
+      retries: 3
+      start_period: 15m
+    env_file:
+      - gitlab.env
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        gitlab_rails['smtp_enable'] = true
+        gitlab_rails['smtp_address'] = "maildev.example.ru"
+        gitlab_rails['smtp_openssl_verify_mode'] = 'none'
+        gitlab_rails['smtp_port'] = 1025
+        gitlab_rails['gitlab_shell_ssh_port'] = 22
+        gitlab_rails['ldap_enabled'] = true
+        gitlab_rails['ldap_servers'] = {
+          'main' => {
+            'label' => 'TechNova LDAP',
+            'host' => 'ldap.example.com',
+            'port' => 389,  # Используйте 636 для SSL
+            'uid' => 'uid',
+            'bind_dn' => 'cn=admin,dc=ldap,dc=example,dc=com',
+            'base' => 'ou=users,dc=ldap,dc=example,dc=com',
+            'group_base' => 'ou=groups,dc=ldap,dc=example,dc=com',
+            'admin_group' => ['admins'],
+            'password' => File.read('/run/secrets/ldap_admin_password'),
+            'encryption' => 'plain',
+            'verify_certificates' => false,
+            'timeout' => 10,
+            'active_directory' => false,
+            'user_filter' => '',
+            'lowercase_usernames' => false,
+            'allow_username_or_email_login' => true,
+            'block_auto_created_users' => false,
+            'attributes' => {
+              'username' => ['uid'],
+              'email' => ['mail'],
+              'name' => 'displayName',
+              'first_name' => 'givenName',
+              'last_name' => 'sn'
+            }
+          }
+        }
+    secrets:
+      - ldap_admin_password
+      - gitlab_root_password
+    ports:
+      - "80:80"
+      - "443:443"
+      - "22:22"
+    volumes:
+      - "gitlab-config:/etc/gitlab"
+      - "gitlab-logs:/var/log/gitlab"
+      - "gitlab-data:/var/opt/gitlab"
+    shm_size: "256m"
+  # This is RUNNER
+  gitlab-runner:
+    container_name: gitlab-runner
+    image: "gitlab/gitlab-runner:v18.3.1"
+    restart: unless-stopped
+    extra_hosts:
+      - "gitlab.example.com:172.20.0.10"
+      - "registry.example.com:172.20.0.10"
+    volumes:
+      - "gitlab-runner-conf:/etc/gitlab-runner"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      net:
+        ipv4_address: 172.20.0.11
+  # MAIL
+  maildev:
+    container_name: maildev
+    image: maildev/maildev:2.2.1
+    hostname: "maildev.example.ru"
+    restart: unless-stopped
+    extra_hosts:
+      - "gitlab.example.com:172.20.0.10"
+    networks:
+      net:
+        ipv4_address: 172.20.0.5
+    ports:
+      - 1080:1080 # maildev - web application
+      - 1025:1025 # will use 'mail:1025' to send emails
+  # LDAP
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: openldap
+    env_file:
+      - ldap.env
+    environment:
+      LDAP_LOG_LEVEL: "256"
+      LDAP_ORGANISATION: "Doofenshmirtz Evil Inc."
+      LDAP_DOMAIN: "ldap.example.com"
+      LDAP_BASE_DN: "dc=ldap,dc=example,dc=com"
+      LDAP_ADMIN_PASSWORD_FILE: "/run/secrets/ldap_admin_password"
+      LDAP_CONFIG_PASSWORD_FILE: "/run/secrets/ldap_config_password"
+      LDAP_READONLY_USER: "false"
+      #LDAP_READONLY_USER_USERNAME: "readonly"
+      #LDAP_READONLY_USER_PASSWORD: "readonly"
+      LDAP_RFC2307BIS_SCHEMA: "false"
+      LDAP_BACKEND: "mdb"
+      LDAP_TLS: "false"  # Отключаем TLS
+      LDAP_TLS_ENFORCE: "false"
+      LDAP_REPLICATION: "false"
+      #LDAP_REPLICATION_CONFIG_SYNCPROV: 'binddn="cn=admin,cn=config" bindmethod=simple credentials="$$LDAP_CONFIG_PASSWORD" searchbase="cn=config" type=refreshAndPersist retry="60 +" timeout=1 starttls=critical'
+      #LDAP_REPLICATION_DB_SYNCPROV: 'binddn="cn=admin,$$LDAP_BASE_DN" bindmethod=simple credentials="$$LDAP_ADMIN_PASSWORD" searchbase="$$LDAP_BASE_DN" type=refreshAndPersist interval=00:00:00:10 retry="60 +" timeout=1 starttls=critical'
+      #LDAP_REPLICATION_HOSTS: "#PYTHON2BASH:['ldap://ldap.example.org','ldap://ldap2.example.org']"
+      KEEP_EXISTING_CONFIG: "false"
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: "true"
+      LDAP_SSL_HELPER_PREFIX: "ldap"
+    secrets:
+      - ldap_admin_password
+      - ldap_config_password
+    tty: true
+    networks:
+      net:
+        ipv4_address: 172.20.0.18
+    stdin_open: true
+    volumes:
+      - ldap-data:/var/lib/ldap
+      - ldap-slapd:/etc/ldap/slapd.d
+    ports:
+      - "389:389"  # Только порт 389 для небезопасного соединения
+    domainname: "ldap.example.org"
+    hostname: "ldap-server"
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: phpldapadmin
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: "openldap"
+      PHPLDAPADMIN_HTTPS: "false"
+    networks:
+      net:
+        ipv4_address: 172.20.0.17
+    ports:
+      - "8080:80"
+    depends_on:
+      - openldap
+
+# Secrets 
+secrets:
+  ldap_admin_password:
+    file: ./secrets/ldap_admin_password.txt
+  ldap_config_password:
+    file: ./secrets/ldap_config_password.txt
+  gitlab_root_password:
+    file: ./secrets/gitlab_root_password.txt
+
+# Network
+networks:
+  net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.20.0.0/16"
+
+# Volumes
+volumes:
+  gitlab-config:
+  gitlab-logs:
+  gitlab-data:
+  gitlab-runner-conf:
+  ldap-data:
+  ldap-slapd:

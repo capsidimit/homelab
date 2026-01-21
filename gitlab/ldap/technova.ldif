@@ -1,0 +1,97 @@
+# Organizational Unit for Groups
+dn: ou=groups,dc=ldap,dc=example,dc=com
+objectClass: organizationalUnit
+ou: groups
+description: Groups for TechNova Corp
+
+# Group: developers
+dn: cn=developers,ou=groups,dc=ldap,dc=example,dc=com
+objectClass: groupOfNames
+cn: developers
+description: Software developers at TechNova Corp
+member: uid=ivan.petrov,ou=people,dc=ldap,dc=example,dc=com
+member: uid=elena.sokolova,ou=people,dc=ldap,dc=example,dc=com
+
+# Group: testers
+dn: cn=testers,ou=groups,dc=ldap,dc=example,dc=com
+objectClass: groupOfNames
+cn: testers
+description: QA and testing team at TechNova Corp
+member: uid=dmitry.kuznetsov,ou=people,dc=ldap,dc=example,dc=com
+member: uid=anna.morozova,ou=people,dc=ldap,dc=example,dc=com
+
+# Group: admins
+dn: cn=admins,ou=groups,dc=ldap,dc=example,dc=com
+objectClass: groupOfNames
+cn: admins
+description: System and LDAP administrators for TechNova Corp
+member: uid=sergei.volodin,ou=people,dc=ldap,dc=example,dc=com
+
+# Group: executives
+dn: cn=executives,ou=groups,dc=ldap,dc=example,dc=com
+objectClass: groupOfNames
+cn: executives
+description: Executive leadership of TechNova Corp
+member: uid=oleg.fedorov,ou=people,dc=ldap,dc=example,dc=com
+
+# Organizational Unit for Users
+dn: ou=users,dc=ldap,dc=example,dc=com
+objectClass: organizationalUnit
+ou: users
+description: Employee accounts for defunct TechNova Corp
+
+# Employee: Ivan Petrov
+dn: uid=ivan.petrov,ou=users,dc=ldap,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: ivan.petrov
+cn: Ivan Petrov
+sn: Petrov
+givenName: Ivan
+mail: ivan.petrov@technova.ru
+title: Senior Software Engineer
+employeeNumber: TN-1001
+employeeType: former
+description: Last active: 2024-03-15 (Company dissolution)
+userPassword: {SSHA}hashed_password_here
+
+# Employee: Elena Sokolova
+dn: uid=elena.sokolova,ou=users,dc=ldap,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: elena.sokolova
+cn: Elena Sokolova
+sn: Sokolova
+givenName: Elena
+mail: elena.sokolova@technova.ru
+title: QA Team Lead
+employeeNumber: TN-1045
+employeeType: former
+description: Last active: 2024-02-28 (Company dissolution)
+userPassword: {SSHA}hashed_password_here
+
+# Employee: Mikhail Volkov
+dn: uid=mikhail.volkov,ou=users,dc=ldap,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: mikhail.volkov
+cn: Mikhail Volkov
+sn: Volkov
+givenName: Mikhail
+mail: m.volkov@technova.ru
+title: Chief Technology Officer
+employeeNumber: TN-001
+employeeType: former-executive
+description: Final login: 2024-01-10 (Asset seizure proceedings)
+userPassword: {SSHA}hashed_password_here
+
+# Employee: Anastasia Orlova
+dn: uid=anastasia.orlova,ou=users,dc=ldap,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: anastasia.orlova
+cn: Anastasia Orlova
+sn: Orlova
+givenName: Anastasia
+mail: a.orlova@technova.ru
+title: DevOps Specialist
+employeeNumber: TN-2078
+employeeType: terminated
+description: Account frozen 2023-11-30 (Regulatory compliance hold)
+userPassword: {SSHA}hashed_password_here
