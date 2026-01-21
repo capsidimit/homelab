@@ -43,3 +43,7 @@ If migrating from the previous setup with hardcoded passwords:
 1. Create the secret files with your existing passwords
 2. The containers will automatically use the new secret files on next restart
 3. Remove any hardcoded passwords from your configuration
+
+## ToDo
+
+- [ ] Add ssl certs generation for services from specified CA and private files

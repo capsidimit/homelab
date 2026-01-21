@@ -137,7 +137,7 @@ services:
       - ldap-data:/var/lib/ldap
       - ldap-slapd:/etc/ldap/slapd.d
     ports:
-      - "389:389"  # Только порт 389 для небезопасного соединения
+      - "389:389"
     domainname: "ldap.example.org"
     hostname: "ldap-server"
   phpldapadmin:
