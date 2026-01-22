@@ -70,6 +70,9 @@ services:
       - "gitlab-logs:/var/log/gitlab"
       - "gitlab-data:/var/opt/gitlab"
     shm_size: "256m"
+    depends_on:
+      - openldap
+      - maildev
   # This is RUNNER
   gitlab-runner:
     container_name: gitlab-runner
@@ -84,6 +87,8 @@ services:
     networks:
       net:
         ipv4_address: 172.20.0.11
+    depends_on:
+      - gitlab
   # MAIL
   maildev:
     container_name: maildev
@@ -106,7 +111,7 @@ services:
       - ldap.env
     environment:
       LDAP_LOG_LEVEL: "256"
-      LDAP_ORGANISATION: "Doofenshmirtz Evil Inc."
+      LDAP_ORGANISATION: "TechNova"
       LDAP_DOMAIN: "ldap.example.com"
       LDAP_BASE_DN: "dc=ldap,dc=example,dc=com"
       LDAP_ADMIN_PASSWORD_FILE: "/run/secrets/ldap_admin_password"
@@ -136,8 +141,10 @@ services:
     volumes:
       - ldap-data:/var/lib/ldap
       - ldap-slapd:/etc/ldap/slapd.d
+      - ./ldap/ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom
     ports:
       - "389:389"
+    command: --copy-service
     domainname: "ldap.example.org"
     hostname: "ldap-server"
   phpldapadmin:
