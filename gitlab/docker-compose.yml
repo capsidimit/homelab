@@ -1,19 +1,43 @@
 name: "gitlab"
 services:
+  init-certs:
+    image: alpine:3.23.2
+    container_name: init-certs
+    volumes:
+      - "./certs:/tmp/homelab:rw"
+      - "gitlab-ssl:/tmp/homelab/gitlab:rw"
+      - "maildev-ssl:/tmp/homelab/maildev:rw"
+      - "ldap-ssl:/tmp/homelab/ldap:rw"
+      - "vault-ssl:/tmp/homelab/vault:rw"
+      - "../tools:/tools:ro"
+    command: >
+      /bin/sh -c "apk add --no-cache openssl && \
+      /tools/generate-certs.sh \
+        --certs-dir /tmp/homelab \
+        gitlab@gitlab.example.com,registry.example.com \
+        maildev@maildev.example.com \
+        ldap@ldap.example.com \
+        vault@vault.example.com && \
+      exit 0"
+    
   # This is GITLAB Server instance
   gitlab:
     container_name: gitlab
     image: "gitlab/gitlab-ce:18.3.2-ce.0"
     restart: unless-stopped
     hostname: "gitlab.example.com"
-    extra_hosts:
-      - "gitlab.example.com:172.20.0.10"
-      - "maildev.example.ru:172.20.0.5"
-      - "registry.example.com:172.20.0.10"
-      - "ldap.example.com:172.20.0.18"
     networks:
       net:
-        ipv4_address: 172.20.0.10
+        aliases:
+          - gitlab.example.com
+          - registry.example.com
+    depends_on:
+      init-certs:
+        condition: service_completed_successfully
+      openldap:
+        condition: service_started
+      maildev:
+        condition: service_started
     healthcheck:
       test: ["CMD", "/usr/local/sbin/healthcheck"]
       interval: 15m
@@ -21,43 +45,7 @@ services:
       retries: 3
       start_period: 15m
     env_file:
-      - gitlab.env
-    environment:
-      GITLAB_OMNIBUS_CONFIG: |
-        gitlab_rails['smtp_enable'] = true
-        gitlab_rails['smtp_address'] = "maildev.example.ru"
-        gitlab_rails['smtp_openssl_verify_mode'] = 'none'
-        gitlab_rails['smtp_port'] = 1025
-        gitlab_rails['gitlab_shell_ssh_port'] = 22
-        gitlab_rails['ldap_enabled'] = true
-        gitlab_rails['ldap_servers'] = {
-          'main' => {
-            'label' => 'TechNova LDAP',
-            'host' => 'ldap.example.com',
-            'port' => 389,  # Используйте 636 для SSL
-            'uid' => 'uid',
-            'bind_dn' => 'cn=admin,dc=ldap,dc=example,dc=com',
-            'base' => 'ou=users,dc=ldap,dc=example,dc=com',
-            'group_base' => 'ou=groups,dc=ldap,dc=example,dc=com',
-            'admin_group' => ['admins'],
-            'password' => File.read('/run/secrets/ldap_admin_password'),
-            'encryption' => 'plain',
-            'verify_certificates' => false,
-            'timeout' => 10,
-            'active_directory' => false,
-            'user_filter' => '',
-            'lowercase_usernames' => false,
-            'allow_username_or_email_login' => true,
-            'block_auto_created_users' => false,
-            'attributes' => {
-              'username' => ['uid'],
-              'email' => ['mail'],
-              'name' => 'displayName',
-              'first_name' => 'givenName',
-              'last_name' => 'sn'
-            }
-          }
-        }
+      - ./gitlab/gitlab.env
     secrets:
       - ldap_admin_password
       - gitlab_root_password
@@ -67,51 +55,61 @@ services:
       - "22:22"
     volumes:
       - "gitlab-config:/etc/gitlab"
+      - "./config/gitlab.rb:/etc/gitlab/gitlab.rb:ro"
       - "gitlab-logs:/var/log/gitlab"
       - "gitlab-data:/var/opt/gitlab"
+      - "gitlab-ssl:/etc/gitlab/ssl:ro"
+      - "./certs/ca.pem:/etc/gitlab/trusted-certs/ca.pem:ro"
     shm_size: "256m"
-    depends_on:
-      - openldap
-      - maildev
+  
   # This is RUNNER
   gitlab-runner:
-    container_name: gitlab-runner
     image: "gitlab/gitlab-runner:v18.3.1"
+    container_name: gitlab-runner
     restart: unless-stopped
-    extra_hosts:
-      - "gitlab.example.com:172.20.0.10"
-      - "registry.example.com:172.20.0.10"
     volumes:
       - "gitlab-runner-conf:/etc/gitlab-runner"
       - "/var/run/docker.sock:/var/run/docker.sock"
-    networks:
-      net:
-        ipv4_address: 172.20.0.11
+      - "gitlab-ssl:/certs:ro"
     depends_on:
-      - gitlab
+      gitlab:
+        condition: service_healthy
+  
   # MAIL
   maildev:
     container_name: maildev
     image: maildev/maildev:2.2.1
-    hostname: "maildev.example.ru"
+    hostname: "maildev.example.com"
     restart: unless-stopped
-    extra_hosts:
-      - "gitlab.example.com:172.20.0.10"
     networks:
       net:
-        ipv4_address: 172.20.0.5
+        aliases:
+          - maildev.example.com
     ports:
       - 1080:1080 # maildev - web application
       - 1025:1025 # will use 'mail:1025' to send emails
+    environment:
+      MAILDEV_HTTPS: "true"
+      MAILDEV_HTTPS_CERT: /etc/maildev/ssl/cert.pem
+      MAILDEV_HTTPS_KEY: /etc/maildev/ssl/key.pem
+      MAILDEV_INCOMING_SECURE: "true"
+      MAILDEV_OUTGOING_HOST: maildev.example.com
+      MAILDEV_OUTGOING_SECURE: "true"
+      MAILDEV_OUTGOING_CERT: /etc/maildev/ssl/cert.pem
+      MAILDEV_OUTGOING_KEY: /etc/maildev/ssl/key.pem
+    volumes:
+      - "maildev-ssl:/etc/maildev/ssl:ro"
+  
   # LDAP
   openldap:
-    image: osixia/openldap:1.5.0
+    image: cleanstart/openldap:2.6.10
+    restart: unless-stopped
     container_name: openldap
     env_file:
-      - ldap.env
+      - ./ldap/ldap.env
     environment:
       LDAP_LOG_LEVEL: "256"
-      LDAP_ORGANISATION: "TechNova"
+      LDAP_ORGANISATION: "TechNova Corp"
       LDAP_DOMAIN: "ldap.example.com"
       LDAP_BASE_DN: "dc=ldap,dc=example,dc=com"
       LDAP_ADMIN_PASSWORD_FILE: "/run/secrets/ldap_admin_password"
@@ -121,7 +119,6 @@ services:
       #LDAP_READONLY_USER_PASSWORD: "readonly"
       LDAP_RFC2307BIS_SCHEMA: "false"
       LDAP_BACKEND: "mdb"
-      LDAP_TLS: "false"  # Отключаем TLS
       LDAP_TLS_ENFORCE: "false"
       LDAP_REPLICATION: "false"
       #LDAP_REPLICATION_CONFIG_SYNCPROV: 'binddn="cn=admin,cn=config" bindmethod=simple credentials="$$LDAP_CONFIG_PASSWORD" searchbase="cn=config" type=refreshAndPersist retry="60 +" timeout=1 starttls=critical'
@@ -130,36 +127,121 @@ services:
       KEEP_EXISTING_CONFIG: "false"
       LDAP_REMOVE_CONFIG_AFTER_SETUP: "true"
       LDAP_SSL_HELPER_PREFIX: "ldap"
+      LDAP_TLS: "true"
+      LDAP_TLS_CRT_FILENAME: "cert.pem"
+      LDAP_TLS_KEY_FILENAME: "key.pem"
+      LDAP_TLS_CA_CRT_FILENAME: "ca.pem"
     secrets:
       - ldap_admin_password
       - ldap_config_password
     tty: true
     networks:
       net:
-        ipv4_address: 172.20.0.18
+        aliases:
+          - ldap.example.com
     stdin_open: true
     volumes:
-      - ldap-data:/var/lib/ldap
-      - ldap-slapd:/etc/ldap/slapd.d
-      - ./ldap/ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom
+      - "ldap-data:/var/lib/ldap"
+      - "ldap-slapd:/etc/ldap/slapd.d"
+      - "ldap-ssl:/etc/ldap/certs:ro"
+      - "./ldap/ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom"
     ports:
-      - "389:389"
+      - "636:636"
     command: --copy-service
-    domainname: "ldap.example.org"
-    hostname: "ldap-server"
+    hostname: "ldap.example.org"
+  
   phpldapadmin:
     image: osixia/phpldapadmin:0.9.0
+    restart: unless-stopped
     container_name: phpldapadmin
     environment:
       PHPLDAPADMIN_LDAP_HOSTS: "openldap"
       PHPLDAPADMIN_HTTPS: "false"
-    networks:
-      net:
-        ipv4_address: 172.20.0.17
     ports:
       - "8080:80"
     depends_on:
-      - openldap
+      openldap:
+        condition: service_started
+  
+  # init_vault:
+  #   image: alpine:3.23.2
+  #   container_name: init_vault
+  #   group_add:
+  #     - 3001
+  #   volumes:
+  #     - vault-data:/vault/data:rw
+  #     - certs:/tmp/certs/:rw
+  #     - secrets:/secrets:rw
+  #   command: >
+  #     /bin/sh -c "apk add --no-cache openssl && \
+  #     openssl req -x509 -newkey rsa:4096 -sha256 -days 365 \
+  #     -nodes -keyout /tmp/certs/vault-key.pem -out /tmp/certs/vault-cert.pem \
+  #     -subj '/CN=vault' \
+  #     -addext 'subjectAltName=DNS:vault,IP:127.0.0.1' && \
+  #     chown -R 100:3001 /vault/ /tmp/certs /secrets && \
+  #     chmod -R 0750 /secrets/ && \
+  #     exit 0"
+
+  # vault:
+  #   image: "hashicorp/vault:1.13.3"
+  #   restart: unless-stopped
+  #   container_name: vault
+  #   hostname: "vault.example.ru"
+  #   ports:
+  #     - "8201:8201"
+  #     - "8200:8200"
+  #   privileged: true
+  #   depends_on:
+  #     init_vault:
+  #       condition: service_completed_successfully
+  #   environment:
+  #     VAULT_ADDR: "https://vault:8200"
+  #     VAULT_CACERT: "/vault/certs/vault-cert.pem"
+  #     VAULT_SKIP_VERIFY: true
+  #   cap_add:
+  #     - IPC_LOCK
+  #   volumes:
+  #     - vault-data:/vault/data:rw
+  #     - ./agent-policies.hcl:/policies/agent-policies.hcl
+  #     - ./vault-config.hcl:/vault/config/vault-config.hcl:ro
+  #     - vault-ssl:/vault/certs:ro
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD-SHELL",
+  #         'vault status -format=json 2>/dev/null | grep -q ''"sealed": false''',
+  #       ]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 1000
+  #     start_period: 20s
+  #   command: vault server -config=/vault/config/vault-config.hcl -log-level="info"
+
+  #   # run docker exec vault vault status
+  #   # then
+  #   # run docker exec vault vault operator init -key-shares=3 -key-threshold=2
+
+  # vault-agent:
+  #   image: "hashicorp/vault:1.13.3"
+  #   restart: unless-stopped
+  #   container_name: vault-agent
+  #   depends_on:
+  #     vault:
+  #       condition: service_healthy
+  #   environment:
+  #     VAULT_ADDR: "https://vault:8200"
+  #     VAULT_CACERT: "/vault/certs/vault-cert.pem"
+  #     VAULT_SKIP_VERIFY: true
+  #   cap_add:
+  #     - IPC_LOCK
+  #   volumes:
+  #     - vault-ssl:/vault/certs:ro
+  #     - vault-secrets:/secrets:rw
+  #     - ./role-id.txt:/role-id:ro
+  #     - ./secret-id.txt:/secret-id:ro
+  #     - ./agent-config.hcl:/vault/config/agent-config.hcl:rw
+  #     - ./templates:/templates:ro
+  #   command: vault agent -config=/vault/config/agent-config.hcl -log-level="info"
 
 # Secrets 
 secrets:
@@ -173,16 +255,24 @@ secrets:
 # Network
 networks:
   net:
-    ipam:
-      driver: default
-      config:
-        - subnet: "172.20.0.0/16"
+    driver: bridge
 
 # Volumes
 volumes:
+  gitlab-ssl:
   gitlab-config:
   gitlab-logs:
   gitlab-data:
   gitlab-runner-conf:
+  ldap-ssl:
   ldap-data:
   ldap-slapd:
+  maildev-ssl:
+  # vault-data:
+  # vault-ssl:
+  # vault-secrets:
+  #   driver: local
+  #   driver_opts:
+  #     type: none
+  #     device: ./vault/secrets
+  #     o: bind

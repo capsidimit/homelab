@@ -1,3 +1,6 @@
+# This is an example of an ldif file from a non-existent TechNova Corp company that has a SaaS product
+# Data was generated using LLM and the faker library
+# All names and events in the work are fictional, and any coincidences with real people, living or dead, are accidental
 # Organizational Unit for Groups
 dn: ou=groups,dc=ldap,dc=example,dc=com
 objectClass: organizationalUnit

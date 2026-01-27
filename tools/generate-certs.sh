@@ -40,6 +40,7 @@ log_debug()     { log "$1" "DEBUG" "${LOG_DEBUG_COLOR}"; }
 #endregion
 
 #region Definitions of variables
+CWD=$(pwd -P)
 CA_KEY=${CA_KEY:-"ca-key.pem"}
 CA_CERT=${CA_CERT:-"ca.pem"}
 CA_EXPIRE=${CA_EXPIRE:-"60"}
@@ -51,7 +52,7 @@ SSL_CSR=${SSL_CSR:-"key.csr"}
 SSL_CERT=${SSL_CERT:-"cert.pem"}
 SSL_SIZE=${SSL_SIZE:-"2048"}
 SSL_EXPIRE=${SSL_EXPIRE:-"60"}
-SSL_CERTS_DIR=${SSL_CERTS_DIR:-"certs_$(date '+%Y%m%d')"}
+SSL_CERTS_DIR=${SSL_CERTS_DIR:-"${CWD}/certs_$(date '+%Y%m%d')"}
 
 DRY_RUN=${DRY_RUN:-0}
 SERVICES=()
@@ -185,17 +186,19 @@ done
 
 echo -e "--> Working directory"
 
-CWD=$(pwd -P)
-BASEDIR="$CWD/$SSL_CERTS_DIR"
 
-log_debug "Creating directory \"$BASEDIR\" for certificates"
+log_debug "Creating directory \"$SSL_CERTS_DIR\" for certificates"
 if [[ $DRY_RUN -eq 0 ]]; then
-    mkdir -pv "$BASEDIR" || exit 1
+    if [[-d "${SSL_CERTS_DIR}"]]; then 
+        log_debug "Using existing directory \"$SSL_CERTS_DIR\" for certificates"
+    else
+        mkdir -pv "$SSL_CERTS_DIR" || exit 1
+    fi
 fi
 
-log_debug "Changing directory to \"$BASEDIR\""
+log_debug "Changing directory to \"$SSL_CERTS_DIR\""
 if [[ $DRY_RUN -eq 0 ]]; then
-    cd "$BASEDIR" || exit 1
+    cd "$SSL_CERTS_DIR" || exit 1
 fi
 echo -e ""
 
@@ -231,13 +234,13 @@ for i in "${!SERVICES[@]}"; do
     domains="${SERVICE_DOMAINS[$i]}"
     ips="${SERVICE_IPS[$i]}"
     
-    log_debug "Creating directory \"$BASEDIR/$service\" for service \"$service\" certificates"
+    log_debug "Creating directory \"$SSL_CERTS_DIR/$service\" for service \"$service\" certificates"
     if [[ $DRY_RUN -eq 0 ]]; then
-        mkdir -pv "$BASEDIR/$service" || exit 1
+        mkdir -pv "$SSL_CERTS_DIR/$service" || exit 1
     fi
-    log_debug "Changing directory to \"$BASEDIR/$service\""
+    log_debug "Changing directory to \"$SSL_CERTS_DIR/$service\""
     if [[ $DRY_RUN -eq 0 ]]; then
-        cd "$BASEDIR/$service" || exit 1
+        cd "$SSL_CERTS_DIR/$service" || exit 1
     fi
 
     # Generate SSL config with SAN entries for this service
@@ -291,13 +294,18 @@ EOM
 
     log_info "Generating new SSL CERT ${SSL_CERT}"
     if [[ $DRY_RUN -eq 0 ]]; then
-    openssl x509 -req -in ${SSL_CSR} -CA ${BASEDIR}/${CA_CERT} -CAkey ${BASEDIR}/${CA_KEY} -CAcreateserial -out ${SSL_CERT} \
+    openssl x509 -req -in ${SSL_CSR} -CA ${SSL_CERTS_DIR}/${CA_CERT} -CAkey ${SSL_CERTS_DIR}/${CA_KEY} -CAcreateserial -out ${SSL_CERT} \
         -days ${SSL_EXPIRE} -extensions v3_req -extfile ${SSL_CONFIG}  || exit 1
     fi
     
-    log_debug "Changing directory to \"$BASEDIR\"\n"
+    log_info "Copying CA certificate to service directory"
     if [[ $DRY_RUN -eq 0 ]]; then
-        cd "$BASEDIR" || exit 1
+        cp ${SSL_CERTS_DIR}/${CA_CERT} ${SSL_CERTS_DIR}/${service}/${CA_CERT}
+    fi
+    
+    log_debug "Changing directory to \"$SSL_CERTS_DIR\"\n"
+    if [[ $DRY_RUN -eq 0 ]]; then
+        cd "$SSL_CERTS_DIR" || exit 1
     fi
 done
 
