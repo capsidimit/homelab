@@ -49,6 +49,7 @@ services:
       - "443:443"
       - "22:22"
     volumes:
+      - "gitlab-config:/etc/gitlab"
       - type: bind
         source: ./gitlab/gitlab.rb
         target: /etc/gitlab/gitlab.rb
@@ -63,10 +64,16 @@ services:
     image: "gitlab/gitlab-runner:v18.3.1"
     container_name: gitlab-runner
     restart: unless-stopped
+    environment:
+      CI_SERVER_TLS_CA_FILE: "/etc/gitlab-runner/certs/ca.pem"
+    networks:
+      - net
     volumes:
       - "gitlab-runner-conf:/etc/gitlab-runner"
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "gitlab-ssl:/certs:ro"
+      - type: bind 
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+      - "gitlab-ssl:/etc/gitlab-runner/certs/"
     depends_on:
       gitlab:
         condition: service_started
@@ -159,6 +166,8 @@ services:
     environment:
       PHPLDAPADMIN_LDAP_HOSTS: "openldap"
       PHPLDAPADMIN_HTTPS: "false"
+    networks:
+      - net
     ports:
       - "8080:80"
     depends_on:
