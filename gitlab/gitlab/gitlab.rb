@@ -16,7 +16,7 @@ gitlab_rails['smtp_address'] = "maildev.example.com"
 gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
 gitlab_rails['smtp_port'] = 1025
 gitlab_rails['smtp_tls'] = true
-gitlab_rails['smtp_enable_starttls_auto'] = true
+gitlab_rails['smtp_enable_starttls_auto'] = false
 
 # Container Registry settings
 registry_external_url 'https://registry.example.com'

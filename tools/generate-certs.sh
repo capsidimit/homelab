@@ -61,7 +61,7 @@ SERVICE_IPS=()
 #endregion
 
 #region Help function
-function usage() {
+function usage {
     echo -e "Generates certificates for specified services"
     echo -e ""
     echo -e "Usage: $0 [OPTIONS] service1@domain1,domain2:ip1,ip2 service2@domain1:ip1"
@@ -112,7 +112,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -d|--certs-dir)
-            SSL_CERTS_DIR="$2"
+	    SSL_CERTS_DIR="$(readlink -f $2)"
             shift
             ;;
         --dry-run)
@@ -189,7 +189,7 @@ echo -e "--> Working directory"
 
 log_debug "Creating directory \"$SSL_CERTS_DIR\" for certificates"
 if [[ $DRY_RUN -eq 0 ]]; then
-    if [[-d "${SSL_CERTS_DIR}"]]; then 
+    if [[ -d "${SSL_CERTS_DIR}" ]]; then 
         log_debug "Using existing directory \"$SSL_CERTS_DIR\" for certificates"
     else
         mkdir -pv "$SSL_CERTS_DIR" || exit 1

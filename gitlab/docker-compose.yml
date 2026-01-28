@@ -4,20 +4,15 @@ services:
     image: alpine:3.23.2
     container_name: init-certs
     volumes:
-      - "./certs:/tmp/homelab:rw"
-      - "gitlab-ssl:/tmp/homelab/gitlab:rw"
-      - "maildev-ssl:/tmp/homelab/maildev:rw"
-      - "ldap-ssl:/tmp/homelab/ldap:rw"
-      - "vault-ssl:/tmp/homelab/vault:rw"
+      - "./certs:/certs:rw"
+      - "gitlab-ssl:/certs/gitlab:rw"
+      - "maildev-ssl:/certs/maildev:rw"
+      - "ldap-ssl:/certs/ldap:rw"
       - "../tools:/tools:ro"
     command: >
-      /bin/sh -c "apk add --no-cache openssl && \
-      /tools/generate-certs.sh \
-        --certs-dir /tmp/homelab \
-        gitlab@gitlab.example.com,registry.example.com \
-        maildev@maildev.example.com \
-        ldap@ldap.example.com \
-        vault@vault.example.com && \
+      /bin/sh -c "apk add --no-cache openssl bash && \
+      bash /tools/generate-certs.sh --log-level DEBUG --certs-dir /certs gitlab@gitlab.example.com,registry.example.com maildev@maildev.example.com ldap@ldap.example.com && \
+      chown 1000:1000 -R /certs && \
       exit 0"
     
   # This is GITLAB Server instance
@@ -54,12 +49,13 @@ services:
       - "443:443"
       - "22:22"
     volumes:
-      - "gitlab-config:/etc/gitlab"
-      - "./config/gitlab.rb:/etc/gitlab/gitlab.rb:ro"
+      - type: bind
+        source: ./gitlab/gitlab.rb
+        target: /etc/gitlab/gitlab.rb
       - "gitlab-logs:/var/log/gitlab"
       - "gitlab-data:/var/opt/gitlab"
       - "gitlab-ssl:/etc/gitlab/ssl:ro"
-      - "./certs/ca.pem:/etc/gitlab/trusted-certs/ca.pem:ro"
+      - "./certs/ca.pem:/etc/gitlab/trusted-certs/ca.pem"
     shm_size: "256m"
   
   # This is RUNNER
@@ -73,7 +69,7 @@ services:
       - "gitlab-ssl:/certs:ro"
     depends_on:
       gitlab:
-        condition: service_healthy
+        condition: service_started
   
   # MAIL
   maildev:
@@ -98,7 +94,10 @@ services:
       MAILDEV_OUTGOING_CERT: /etc/maildev/ssl/cert.pem
       MAILDEV_OUTGOING_KEY: /etc/maildev/ssl/key.pem
     volumes:
-      - "maildev-ssl:/etc/maildev/ssl:ro"
+      - "maildev-ssl:/etc/maildev/ssl"
+    depends_on:
+      init-certs:
+        condition: service_completed_successfully
   
   # LDAP
   openldap:
@@ -131,6 +130,7 @@ services:
       LDAP_TLS_CRT_FILENAME: "cert.pem"
       LDAP_TLS_KEY_FILENAME: "key.pem"
       LDAP_TLS_CA_CRT_FILENAME: "ca.pem"
+      SSL_CERT_FILE: "/etc/ldap/certs/ca.pem"
     secrets:
       - ldap_admin_password
       - ldap_config_password
@@ -147,8 +147,10 @@ services:
       - "./ldap/ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom"
     ports:
       - "636:636"
-    command: --copy-service
     hostname: "ldap.example.org"
+    depends_on:
+      init-certs:
+        condition: service_completed_successfully
   
   phpldapadmin:
     image: osixia/phpldapadmin:0.9.0
