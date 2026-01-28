@@ -132,41 +132,22 @@ while [[ $# -gt 0 ]]; do
         *)
             if [[ $1 =~ ^[[:alnum:]-]+@[[:alnum:].,-]+(:[[:alnum:].,-]+)?$ ]]; then
                 # Parse service@domains:ips format
-                service_part="${1%%@*}"
+                service_name="${1%%@*}"
                 domains_ips_part="${1#*@}"
                 
-                SERVICES+=("$service_part")
+                SERVICES+=("$service_name")
                 
                 # Extract domains and IPs if present
-                if [[ "$domains_ips_part" != "$1" ]]; then
-                    # Split domains and IPs by colon
-                    if [[ "$domains_ips_part" == *":"* ]]; then
-                        domains_part="${domains_ips_part%%:*}"
-                        ips_part="${domains_ips_part#*:}"
-                        
-                        # Parse domains (comma-separated)
-                        if [[ -n "$domains_part" ]]; then
-                            IFS=',' read -r -a domains_array <<< "$domains_part"
-                            SERVICE_DOMAINS+=("$(IFS=','; echo "${domains_array[*]}")")
-                        else
-                            SERVICE_DOMAINS+=("")
-                        fi
-                        
-                        # Parse IPs (comma-separated)
-                        if [[ -n "$ips_part" ]]; then
-                            IFS=',' read -r -a ips_array <<< "$ips_part"
-                            SERVICE_IPS+=("$(IFS=','; echo "${ips_array[*]}")")
-                        else
-                            SERVICE_IPS+=("")
-                        fi
-                    else
-                        # Only domains, no IPs
-                        if [[ -n "$domains_ips_part" ]]; then
-                            IFS=',' read -r -a domains_array <<< "$domains_ips_part"
-                            SERVICE_DOMAINS+=("$(IFS=','; echo "${domains_array[*]}")")
-                        else
-                            SERVICE_DOMAINS+=("")
-                        fi
+                if [[ -n "$domains_ips_part" ]]; then
+                    IFS=':' read -r domains ips <<< "$domains_ips_part"
+                    if [[ -n "${domains}" ]]; then 
+                        SERVICE_DOMAINS+=("${domains}")
+                    else 
+                        SERVICE_DOMAINS+=("")
+                    fi 
+                    if [[ -n "${ips}" ]]; then
+                        SERVICE_IPS+=("${ips}")
+                    else 
                         SERVICE_IPS+=("")
                     fi
                 else
@@ -229,10 +210,10 @@ echo -e ""
 
 
 echo -e "--> Processing services and generating certificates"
-for i in "${!SERVICES[@]}"; do
-    service="${SERVICES[$i]}"
-    domains="${SERVICE_DOMAINS[$i]}"
-    ips="${SERVICE_IPS[$i]}"
+for idx in "${!SERVICES[@]}"; do
+    service="${SERVICES[$idx]}"
+    IFS=',' read -r -a domains <<< "${SERVICE_DOMAINS[$idx]}"
+    IFS=',' read -r -a ips <<< "${SERVICE_IPS[$idx]}"
     
     log_debug "Creating directory \"$SSL_CERTS_DIR/$service\" for service \"$service\" certificates"
     if [[ $DRY_RUN -eq 0 ]]; then
@@ -262,17 +243,16 @@ subjectAltName = @alt_names
 [alt_names]
 EOM
 
-            IFS=","
-            dns=("${domains[@]}")
-            dns+=(${service})
-            for i in "${!dns[@]}"; do
-            echo DNS.$((i+1)) = ${dns[$i]} >> ${SSL_CONFIG}
+            dns=( "${domains[@]}" )
+            dns+=( "${service}" )
+            for idx in "${!dns[@]}"; do
+                echo DNS.$((idx+1)) = ${dns[$idx]} >> ${SSL_CONFIG}
             done
 
             if [[ -n ${ips} ]]; then
-                ip=("${ips[@]}")
-                for i in "${!ip[@]}"; do
-                echo IP.$((i+1)) = ${ip[$i]} >> ${SSL_CONFIG}
+                ip=( "${ips[@]}" )
+                for idx in "${!ip[@]}"; do
+                    echo IP.$((idx+1)) = ${ip[$idx]} >> ${SSL_CONFIG}
                 done
             fi
         fi
