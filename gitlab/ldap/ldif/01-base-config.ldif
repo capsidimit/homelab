@@ -6,9 +6,9 @@ objectClass: olcGlobal
 cn: config
 olcLogLevel: stats config ACL
 olcSaslSecProps: noanonymous,minssf=0
-olcTLSCACertificateFile: /etc/ldap/certs/ca.pem
-olcTLSCertificateFile: /etc/ldap/certs/cert.pem
-olcTLSCertificateKeyFile: /etc/ldap/certs/key.pem
+olcTLSCACertificateFile: /etc/openldap/certs/ca.pem
+olcTLSCertificateFile: /etc/openldap/certs/cert.pem
+olcTLSCertificateKeyFile: /etc/openldap/certs/key.pem
 olcTLSVerifyClient: never
 olcThreads: 4
 olcIdleTimeout: 300

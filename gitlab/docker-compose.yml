@@ -123,9 +123,9 @@ services:
           - ldap.example.com
     stdin_open: true
     volumes:
-      - "ldap-data:/var/lib/ldap"
-      - "ldap-slapd:/etc/ldap/slapd.d"
-      - "./certs/ldap:/etc/ldap/certs:ro"
+      - "ldap-data:/var/lib/openldap"
+      - "ldap-slapd:/etc/openldap/slapd.d"
+      - "./certs/ldap:/etc/openldap/certs:ro"
       - "./ldap/ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom"
     ports:
       - "636:636"
