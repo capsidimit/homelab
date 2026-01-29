@@ -1,45 +1,4 @@
 # -----------------------------------------------------------------------------
-# Backend Configuration: MDB (Memory-Mapped Database)
-# -----------------------------------------------------------------------------
-dn: olcDatabase={-1}frontend,cn=config
-objectClass: olcDatabaseConfig
-objectClass: olcFrontendConfig
-olcDatabase: {-1}frontend
-# Максимальный размер результатов поиска
-olcSizeLimit: 500
-# Требовать аутентификацию для всех операций
-olcRequires: authc
-
-# Config database (административная база)
-dn: olcDatabase={0}config,cn=config
-objectClass: olcDatabaseConfig
-olcDatabase: {0}config
-# Доступ только локально через rootdn (по вашему требованию нет доступа к cn=config)
-olcAccess: to * by * none
-
-
-# -----------------------------------------------------------------------------
-# Main Database: MDB Backend
-# -----------------------------------------------------------------------------
-dn: olcDatabase={1}mdb,cn=config
-objectClass: olcDatabaseConfig
-objectClass: olcMdbConfig
-olcDatabase: {1}mdb
-olcSuffix: dc=ldap,dc=example,dc=com
-olcRootDN: cn=admin,dc=ldap,dc=example,dc=com
-olcRootPW: {CRYPT}$(slappasswd -T /run/secrets/ldap_admin_password)
-olcDbDirectory: /var/lib/ldap
-olcDbMaxSize: 1073741824
-olcDbIndex: objectClass eq
-olcDbIndex: cn,uid eq,sub
-olcDbIndex: uidNumber,gidNumber eq
-olcDbIndex: member,memberOf eq
-olcDbIndex: mail eq,sub
-olcDbIndex: sn,givenName eq,sub
-olcDbMode: 0600
-
-
-# -----------------------------------------------------------------------------
 # Access Control Lists (ACL)
 # -----------------------------------------------------------------------------
 olcAccess: {0}to attrs=userPassword
@@ -71,12 +30,19 @@ olcAccess: {4}to *
 # -----------------------------------------------------------------------------
 # Overlay: MemberOf
 # -----------------------------------------------------------------------------
-dn: olcOverlay={0}memberof,olcDatabase={1}mdb,cn=config
+dn: cn=module{1},cn=config
+objectClass: olcModuleList
+cn: module{1}
+olcModulePath: /opt/bitnami/openldap/libexec/openldap
+olcModuleLoad: memberof.so
+dn: olcOverlay=memberof,olcDatabase={2}mdb,cn=config
 objectClass: olcOverlayConfig
 objectClass: olcMemberOf
-olcOverlay: {0}memberof
-olcMemberOfGroupAttr: member
-olcMemberOfMemberAttr: memberOf
-olcMemberOfRefInt: TRUE
+olcOverlay: memberof
 olcMemberOfDangling: ignore
+olcMemberOfRefInt: TRUE
+olcMemberOfGroupOC: groupOfNames
+olcMemberOfMemberAD: member
+olcMemberOfMemberOfAD: memberOf
+
 

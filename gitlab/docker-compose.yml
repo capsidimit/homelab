@@ -104,49 +104,43 @@ services:
   
   # LDAP
   openldap:
-    image: cleanstart/openldap:2.6.10
+    image: bitnami/openldap:latest
     restart: unless-stopped
     container_name: openldap
     env_file:
       - ./ldap/ldap.env
     environment:
+      LDAP_ROOT: "dc=ldap,dc=example,dc=com"
       LDAP_ORGANISATION: "TechNova Corp"
       LDAP_DOMAIN: "ldap.example.com"
-      SSL_CERT_FILE: /etc/openldap/certs/ca.pem
+      LDAP_ADMIN_PASSWORD_FILE: /run/secrets/ldap_admin_password
+      LDAP_ADMIN_DN: "cn=admin,dc=ldap,dc=example,dc=com"
+      LDAP_ENABLE_TLS: "yes"
+      LDAP_REQUIRE_TLS: "yes"
+      LDAP_TLS_CERT_FILE: /opt/bitnami/openldap/certs/cert.pem
+      LDAP_TLS_KEY_FILE: /opt/bitnami/openldap/certs/key.pem
+      LDAP_TLS_CA_FILE: /opt/bitnami/openldap/certs/ca.pem
     secrets:
       - ldap_admin_password
       - ldap_gitlab_password
       - ldap_users_password
     tty: true
-    entrypoint:
-     - slapd
-    command:
-    -  "-u"
-    - "ldap"
-    - "-g"
-    - "ldap"
-    - "-h"
-    - "ldap:// ldaps://"
-    - "-d"
-    - "64"
-    - "-F"
-    - "/etc/openldap/slapd.d"
     networks:
       net:
         aliases:
           - ldap.example.com
     stdin_open: true
     volumes:
-      - "ldap-data:/var/lib/openldap"
-      - "ldap-slapd:/etc/openldap/slapd.d:ro"
-      - "./certs/ldap:/etc/openldap/certs:ro"
-      - "./ldap/ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom"
+      - "ldap-data:/bitnami/openldap"
+      - "ldap-slapd:/opt/bitnami/openldap/etc/slapd.d"
+      - "./certs/ldap:/opt/bitnami/openldap/certs:ro"
+      - "./ldap/ldif:/ldifs"
     ports:
-      - "636:636"
+      - "1636:1636"
     depends_on:
       init-certs:
         condition: service_completed_successfully
-  
+
   phpldapadmin:
     image: phpldapadmin/phpldapadmin:2.3.8
     restart: unless-stopped
