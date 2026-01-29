@@ -43,7 +43,7 @@ gitlab_rails['ldap_servers'] = {
     'port' => 636,
     'uid' => 'uid',
     'bind_dn' => 'uid=gitlab,ou=services,dc=ldap,dc=example,dc=com',
-    'base' => 'ou=people,dc=ldap,dc=example,dc=com',
+    'base' => 'ou=users,dc=ldap,dc=example,dc=com',
     'group_base' => 'ou=groups,dc=ldap,dc=example,dc=com',
     'admin_group' => 'admins',
     'password' => File.read('/run/secrets/ldap_gitlab_password'),

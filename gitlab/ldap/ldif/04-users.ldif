@@ -1,5 +1,5 @@
 # Employee: Ivan Petrov
-dn: uid=ivan.petrov,ou=people,dc=ldap,dc=example,dc=com
+dn: uid=ivan.petrov,ou=users,dc=ldap,dc=example,dc=com
 objectClass: inetOrgPerson
 uid: ivan.petrov
 cn: Ivan Petrov
@@ -13,7 +13,7 @@ description: Last active: 2024-03-15 (Company dissolution)
 userPassword: {CRYPT}$(slappasswd -T /run/secrets/ldap_users_password)
 
 # Employee: Elena Sokolova
-dn: uid=elena.sokolova,ou=people,dc=ldap,dc=example,dc=com
+dn: uid=elena.sokolova,ou=users,dc=ldap,dc=example,dc=com
 objectClass: inetOrgPerson
 uid: elena.sokolova
 cn: Elena Sokolova
@@ -27,7 +27,7 @@ description: Last active: 2024-02-28 (Company dissolution)
 userPassword: {CRYPT}$(slappasswd -T /run/secrets/ldap_users_password)
 
 # Employee: Mikhail Volkov
-dn: uid=mikhail.volkov,ou=people,dc=ldap,dc=example,dc=com
+dn: uid=mikhail.volkov,ou=users,dc=ldap,dc=example,dc=com
 objectClass: inetOrgPerson
 uid: mikhail.volkov
 cn: Mikhail Volkov
@@ -41,7 +41,7 @@ description: Final login: 2024-01-10 (Asset seizure proceedings)
 userPassword: {CRYPT}$(slappasswd -T /run/secrets/ldap_users_password)
 
 # Employee: Anastasia Orlova
-dn: uid=anastasia.orlova,ou=people,dc=ldap,dc=example,dc=com
+dn: uid=anastasia.orlova,ou=users,dc=ldap,dc=example,dc=com
 objectClass: inetOrgPerson
 uid: anastasia.orlova
 cn: Anastasia Orlova

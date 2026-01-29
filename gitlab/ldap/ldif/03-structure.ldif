@@ -12,7 +12,7 @@ description: Homelab LDAP directory for TechNova Corp
 # -----------------------------------------------------------------------------
 # Organizational Units
 # -----------------------------------------------------------------------------
-dn: ou=people,dc=ldap,dc=example,dc=com
+dn: ou=users,dc=ldap,dc=example,dc=com
 objectClass: organizationalUnit
 ou: people
 description: Employee accounts for TechNova Corp

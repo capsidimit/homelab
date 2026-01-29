@@ -51,7 +51,7 @@ olcAccess: {1}to attrs=shadowLastChange
   by self write
   by * read
 
-olcAccess: {2}to dn.subtree="ou=people,dc=ldap,dc=example,dc=com"
+olcAccess: {2}to dn.subtree="ou=users,dc=ldap,dc=example,dc=com"
   by dn.exact="uid=gitlab,ou=services,dc=ldap,dc=example,dc=com" read
   by dn.exact="cn=admin,dc=ldap,dc=example,dc=com" write
   by self read
