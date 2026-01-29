@@ -8,7 +8,7 @@ services:
       - "../tools:/tools:ro"
     command: >
       /bin/sh -c "apk add --no-cache openssl bash && \
-      bash /tools/generate-certs.sh --log-level DEBUG --certs-dir /certs gitlab@gitlab.example.com,registry.example.com maildev@maildev.example.com ldap@ldap.example.com && \
+      bash /tools/generate-certs.sh --log-level DEBUG --certs-dir /certs gitlab@gitlab.example.com,registry.example.com maildev@maildev.example.com ldap@ldap.example.com phpldapadmin@phpldapadmin.example.com && \
       chown 1000:1000 -R /certs && \
       exit 0"
     
@@ -38,7 +38,7 @@ services:
     env_file:
       - ./gitlab/gitlab.env
     secrets:
-      - ldap_admin_password
+      - ldap_gitlab_password
       - gitlab_root_password
     ports:
       - "80:80"
@@ -104,7 +104,7 @@ services:
   
   # LDAP
   openldap:
-    image: bitnami/openldap:latest
+    image: bitnamilegacy/openldap:2.6.10
     restart: unless-stopped
     container_name: openldap
     env_file:
@@ -132,7 +132,6 @@ services:
     stdin_open: true
     volumes:
       - "ldap-data:/bitnami/openldap"
-      - "ldap-slapd:/opt/bitnami/openldap/etc/slapd.d"
       - "./certs/ldap:/opt/bitnami/openldap/certs:ro"
       - "./ldap/ldif:/ldifs"
     ports:
@@ -146,13 +145,22 @@ services:
     restart: unless-stopped
     container_name: phpldapadmin
     environment:
-      PHPLDAPADMIN_LDAP_HOSTS: "openldap"
-      PHPLDAPADMIN_HTTPS: "false"
+      PHPLDAPADMIN_LDAP_HOSTS: "#PYTHON2BASH:[{'openldap': [{'server': [{'tls': True}]}]}]"
+      PHPLDAPADMIN_LDAP_CLIENT_TLS: "true"
+      PHPLDAPADMIN_LDAP_CLIENT_TLS_REQCERT: "allow"
+      PHPLDAPADMIN_LDAP_CLIENT_TLS_CA_CRT_FILENAME: "ca.pem"
+      PHPLDAPADMIN_HTTPS: "true"
+      PHPLDAPADMIN_HTTPS_CRT_FILENAME: "cert.pem"
+      PHPLDAPADMIN_HTTPS_KEY_FILENAME: "key.pem"
+      PHPLDAPADMIN_HTTPS_CA_CRT_FILENAME: "ca.pem"
     ports:
-      - "8080:80"
+      - "8080:8080"
     depends_on:
       openldap:
         condition: service_started
+    volumes:
+      - "./certs/phpldapadmin:/container/service/phpldapadmin/assets/apache2/certs:ro"
+      - "./certs/ldap:/container/service/ldap-client/assets/certs:ro"
     networks:
       net:
         aliases:
