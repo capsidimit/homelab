@@ -5,9 +5,6 @@ services:
     container_name: init-certs
     volumes:
       - "./certs:/certs:rw"
-      - "gitlab-ssl:/certs/gitlab:rw"
-      - "maildev-ssl:/certs/maildev:rw"
-      - "ldap-ssl:/certs/ldap:rw"
       - "../tools:/tools:ro"
     command: >
       /bin/sh -c "apk add --no-cache openssl bash && \
@@ -20,7 +17,6 @@ services:
     container_name: gitlab
     image: "gitlab/gitlab-ce:18.3.2-ce.0"
     restart: unless-stopped
-    hostname: "gitlab.example.com"
     networks:
       net:
         aliases:
@@ -55,7 +51,7 @@ services:
         target: /etc/gitlab/gitlab.rb
       - "gitlab-logs:/var/log/gitlab"
       - "gitlab-data:/var/opt/gitlab"
-      - "gitlab-ssl:/etc/gitlab/ssl:ro"
+      - "./certs/gitlab:/etc/gitlab/ssl:ro"
       - "./certs/ca.pem:/etc/gitlab/trusted-certs/ca.pem"
     shm_size: "256m"
   
@@ -70,10 +66,8 @@ services:
       - net
     volumes:
       - "gitlab-runner-conf:/etc/gitlab-runner"
-      - type: bind 
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-      - "gitlab-ssl:/etc/gitlab-runner/certs/"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./certs/gitlab:/certs:ro"
     depends_on:
       gitlab:
         condition: service_started
@@ -82,7 +76,6 @@ services:
   maildev:
     container_name: maildev
     image: maildev/maildev:2.2.1
-    hostname: "maildev.example.com"
     restart: unless-stopped
     networks:
       net:
@@ -92,16 +85,19 @@ services:
       - 1080:1080 # maildev - web application
       - 1025:1025 # will use 'mail:1025' to send emails
     environment:
+      NODE_EXTRA_CA_CERTS: /etc/maildev/ssl/ca.crt
       MAILDEV_HTTPS: "true"
       MAILDEV_HTTPS_CERT: /etc/maildev/ssl/cert.pem
       MAILDEV_HTTPS_KEY: /etc/maildev/ssl/key.pem
       MAILDEV_INCOMING_SECURE: "true"
+      MAILDEV_INCOMING_CERT: /etc/maildev/ssl/cert.pem
+      MAILDEV_INCOMING_KEY: /etc/maildev/ssl/key.pem
       MAILDEV_OUTGOING_HOST: maildev.example.com
       MAILDEV_OUTGOING_SECURE: "true"
       MAILDEV_OUTGOING_CERT: /etc/maildev/ssl/cert.pem
       MAILDEV_OUTGOING_KEY: /etc/maildev/ssl/key.pem
     volumes:
-      - "maildev-ssl:/etc/maildev/ssl"
+      - "./certs/maildev:/etc/maildev/ssl"
     depends_on:
       init-certs:
         condition: service_completed_successfully
@@ -114,33 +110,12 @@ services:
     env_file:
       - ./ldap/ldap.env
     environment:
-      LDAP_LOG_LEVEL: "256"
       LDAP_ORGANISATION: "TechNova Corp"
       LDAP_DOMAIN: "ldap.example.com"
-      LDAP_BASE_DN: "dc=ldap,dc=example,dc=com"
-      LDAP_ADMIN_PASSWORD_FILE: "/run/secrets/ldap_admin_password"
-      LDAP_CONFIG_PASSWORD_FILE: "/run/secrets/ldap_config_password"
-      LDAP_READONLY_USER: "false"
-      #LDAP_READONLY_USER_USERNAME: "readonly"
-      #LDAP_READONLY_USER_PASSWORD: "readonly"
-      LDAP_RFC2307BIS_SCHEMA: "false"
-      LDAP_BACKEND: "mdb"
-      LDAP_TLS_ENFORCE: "false"
-      LDAP_REPLICATION: "false"
-      #LDAP_REPLICATION_CONFIG_SYNCPROV: 'binddn="cn=admin,cn=config" bindmethod=simple credentials="$$LDAP_CONFIG_PASSWORD" searchbase="cn=config" type=refreshAndPersist retry="60 +" timeout=1 starttls=critical'
-      #LDAP_REPLICATION_DB_SYNCPROV: 'binddn="cn=admin,$$LDAP_BASE_DN" bindmethod=simple credentials="$$LDAP_ADMIN_PASSWORD" searchbase="$$LDAP_BASE_DN" type=refreshAndPersist interval=00:00:00:10 retry="60 +" timeout=1 starttls=critical'
-      #LDAP_REPLICATION_HOSTS: "#PYTHON2BASH:['ldap://ldap.example.org','ldap://ldap2.example.org']"
-      KEEP_EXISTING_CONFIG: "false"
-      LDAP_REMOVE_CONFIG_AFTER_SETUP: "true"
-      LDAP_SSL_HELPER_PREFIX: "ldap"
-      LDAP_TLS: "true"
-      LDAP_TLS_CRT_FILENAME: "cert.pem"
-      LDAP_TLS_KEY_FILENAME: "key.pem"
-      LDAP_TLS_CA_CRT_FILENAME: "ca.pem"
-      SSL_CERT_FILE: "/etc/ldap/certs/ca.pem"
     secrets:
       - ldap_admin_password
-      - ldap_config_password
+      - ldap_gitlab_password
+      - ldap_users_password
     tty: true
     networks:
       net:
@@ -150,116 +125,39 @@ services:
     volumes:
       - "ldap-data:/var/lib/ldap"
       - "ldap-slapd:/etc/ldap/slapd.d"
-      - "ldap-ssl:/etc/ldap/certs:ro"
+      - "./certs/ldap:/etc/ldap/certs:ro"
       - "./ldap/ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom"
     ports:
       - "636:636"
-    hostname: "ldap.example.org"
     depends_on:
       init-certs:
         condition: service_completed_successfully
   
   phpldapadmin:
-    image: osixia/phpldapadmin:0.9.0
+    image: phpldapadmin/phpldapadmin:2.3.8
     restart: unless-stopped
     container_name: phpldapadmin
     environment:
       PHPLDAPADMIN_LDAP_HOSTS: "openldap"
       PHPLDAPADMIN_HTTPS: "false"
-    networks:
-      - net
     ports:
       - "8080:80"
     depends_on:
       openldap:
         condition: service_started
-  
-  # init_vault:
-  #   image: alpine:3.23.2
-  #   container_name: init_vault
-  #   group_add:
-  #     - 3001
-  #   volumes:
-  #     - vault-data:/vault/data:rw
-  #     - certs:/tmp/certs/:rw
-  #     - secrets:/secrets:rw
-  #   command: >
-  #     /bin/sh -c "apk add --no-cache openssl && \
-  #     openssl req -x509 -newkey rsa:4096 -sha256 -days 365 \
-  #     -nodes -keyout /tmp/certs/vault-key.pem -out /tmp/certs/vault-cert.pem \
-  #     -subj '/CN=vault' \
-  #     -addext 'subjectAltName=DNS:vault,IP:127.0.0.1' && \
-  #     chown -R 100:3001 /vault/ /tmp/certs /secrets && \
-  #     chmod -R 0750 /secrets/ && \
-  #     exit 0"
-
-  # vault:
-  #   image: "hashicorp/vault:1.13.3"
-  #   restart: unless-stopped
-  #   container_name: vault
-  #   hostname: "vault.example.ru"
-  #   ports:
-  #     - "8201:8201"
-  #     - "8200:8200"
-  #   privileged: true
-  #   depends_on:
-  #     init_vault:
-  #       condition: service_completed_successfully
-  #   environment:
-  #     VAULT_ADDR: "https://vault:8200"
-  #     VAULT_CACERT: "/vault/certs/vault-cert.pem"
-  #     VAULT_SKIP_VERIFY: true
-  #   cap_add:
-  #     - IPC_LOCK
-  #   volumes:
-  #     - vault-data:/vault/data:rw
-  #     - ./agent-policies.hcl:/policies/agent-policies.hcl
-  #     - ./vault-config.hcl:/vault/config/vault-config.hcl:ro
-  #     - vault-ssl:/vault/certs:ro
-  #   healthcheck:
-  #     test:
-  #       [
-  #         "CMD-SHELL",
-  #         'vault status -format=json 2>/dev/null | grep -q ''"sealed": false''',
-  #       ]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 1000
-  #     start_period: 20s
-  #   command: vault server -config=/vault/config/vault-config.hcl -log-level="info"
-
-  #   # run docker exec vault vault status
-  #   # then
-  #   # run docker exec vault vault operator init -key-shares=3 -key-threshold=2
-
-  # vault-agent:
-  #   image: "hashicorp/vault:1.13.3"
-  #   restart: unless-stopped
-  #   container_name: vault-agent
-  #   depends_on:
-  #     vault:
-  #       condition: service_healthy
-  #   environment:
-  #     VAULT_ADDR: "https://vault:8200"
-  #     VAULT_CACERT: "/vault/certs/vault-cert.pem"
-  #     VAULT_SKIP_VERIFY: true
-  #   cap_add:
-  #     - IPC_LOCK
-  #   volumes:
-  #     - vault-ssl:/vault/certs:ro
-  #     - vault-secrets:/secrets:rw
-  #     - ./role-id.txt:/role-id:ro
-  #     - ./secret-id.txt:/secret-id:ro
-  #     - ./agent-config.hcl:/vault/config/agent-config.hcl:rw
-  #     - ./templates:/templates:ro
-  #   command: vault agent -config=/vault/config/agent-config.hcl -log-level="info"
+    networks:
+      net:
+        aliases:
+          - phpldapadmin.example.com
 
 # Secrets 
 secrets:
   ldap_admin_password:
     file: ./secrets/ldap_admin_password.txt
-  ldap_config_password:
-    file: ./secrets/ldap_config_password.txt
+  ldap_gitlab_password:
+    file: ./secrets/ldap_gitlab_password.txt
+  ldap_users_password:
+    file: ./secrets/ldap_users_password.txt
   gitlab_root_password:
     file: ./secrets/gitlab_root_password.txt
 
@@ -270,20 +168,9 @@ networks:
 
 # Volumes
 volumes:
-  gitlab-ssl:
   gitlab-config:
   gitlab-logs:
   gitlab-data:
   gitlab-runner-conf:
-  ldap-ssl:
   ldap-data:
   ldap-slapd:
-  maildev-ssl:
-  # vault-data:
-  # vault-ssl:
-  # vault-secrets:
-  #   driver: local
-  #   driver_opts:
-  #     type: none
-  #     device: ./vault/secrets
-  #     o: bind

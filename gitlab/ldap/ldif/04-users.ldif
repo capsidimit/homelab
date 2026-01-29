@@ -1,0 +1,55 @@
+# Employee: Ivan Petrov
+dn: uid=ivan.petrov,ou=people,dc=ldap,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: ivan.petrov
+cn: Ivan Petrov
+sn: Petrov
+givenName: Ivan
+mail: ivan.petrov@technova.ru
+title: Senior Software Engineer
+employeeNumber: TN-1001
+employeeType: former
+description: Last active: 2024-03-15 (Company dissolution)
+userPassword: {CRYPT}$(slappasswd -T /run/secrets/ldap_users_password)
+
+# Employee: Elena Sokolova
+dn: uid=elena.sokolova,ou=people,dc=ldap,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: elena.sokolova
+cn: Elena Sokolova
+sn: Sokolova
+givenName: Elena
+mail: elena.sokolova@technova.ru
+title: QA Team Lead
+employeeNumber: TN-1045
+employeeType: former
+description: Last active: 2024-02-28 (Company dissolution)
+userPassword: {CRYPT}$(slappasswd -T /run/secrets/ldap_users_password)
+
+# Employee: Mikhail Volkov
+dn: uid=mikhail.volkov,ou=people,dc=ldap,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: mikhail.volkov
+cn: Mikhail Volkov
+sn: Volkov
+givenName: Mikhail
+mail: m.volkov@technova.ru
+title: Chief Technology Officer
+employeeNumber: TN-001
+employeeType: former-executive
+description: Final login: 2024-01-10 (Asset seizure proceedings)
+userPassword: {CRYPT}$(slappasswd -T /run/secrets/ldap_users_password)
+
+# Employee: Anastasia Orlova
+dn: uid=anastasia.orlova,ou=people,dc=ldap,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: anastasia.orlova
+cn: Anastasia Orlova
+sn: Orlova
+givenName: Anastasia
+mail: a.orlova@technova.ru
+title: DevOps Specialist
+employeeNumber: TN-2078
+employeeType: terminated
+description: Account frozen 2023-11-30 (Regulatory compliance hold)
+userPassword: {CRYPT}$(slappasswd -T /run/secrets/ldap_users_password)

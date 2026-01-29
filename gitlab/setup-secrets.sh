@@ -8,9 +8,9 @@ echo "============================"
 
 SECRETS_DIR="secrets"
 REQUIRED_SECRETS=(
-    "ldap_bind_password.txt"
     "ldap_admin_password.txt" 
-    "ldap_config_password.txt"
+    "ldap_gitlab_password.txt"
+    "ldap_users_password.txt"
     "gitlab_root_password.txt"
 )
 
@@ -30,14 +30,14 @@ for secret in "${REQUIRED_SECRETS[@]}"; do
     fi
     
     case "$secret" in
-        "ldap_bind_password.txt")
-            description="LDAP bind password for GitLab authentication"
-            ;;
         "ldap_admin_password.txt")
             description="LDAP admin password"
             ;;
-        "ldap_config_password.txt")
-            description="LDAP config password"
+        "ldap_gitlab_password.txt")
+            description="LDAP gitlab password"
+            ;;
+        "ldap_users_password.txt")
+            description="LDAP users passwords"
             ;;
         "gitlab_root_password.txt")
             description="GitLab initial root password"

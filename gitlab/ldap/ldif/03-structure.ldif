@@ -1,0 +1,29 @@
+# -----------------------------------------------------------------------------
+# Root Entry
+# -----------------------------------------------------------------------------
+dn: dc=ldap,dc=example,dc=com
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+dc: ldap
+o: TechNova Corp
+description: Homelab LDAP directory for TechNova Corp
+
+# -----------------------------------------------------------------------------
+# Organizational Units
+# -----------------------------------------------------------------------------
+dn: ou=people,dc=ldap,dc=example,dc=com
+objectClass: organizationalUnit
+ou: people
+description: Employee accounts for TechNova Corp
+
+dn: ou=groups,dc=ldap,dc=example,dc=com
+objectClass: organizationalUnit
+ou: groups
+description: Groups for TechNova Corp
+
+dn: ou=services,dc=ldap,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: services
+description: Service accounts for applications

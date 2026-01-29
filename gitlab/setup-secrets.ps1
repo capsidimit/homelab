@@ -8,9 +8,9 @@ Write-Host "=============================" -ForegroundColor Green
 
 $secretsDir = "secrets"
 $requiredSecrets = @(
-    "ldap_bind_password.txt",
     "ldap_admin_password.txt", 
-    "ldap_config_password.txt",
+    "ldap_gitlab_password.txt",
+    "ldap_users_password.txt",
     "gitlab_root_password.txt"
 )
 
@@ -33,9 +33,9 @@ foreach ($secret in $requiredSecrets) {
     }
     
     $description = switch ($secret) {
-        "ldap_bind_password.txt" { "LDAP bind password for GitLab authentication" }
         "ldap_admin_password.txt" { "LDAP admin password" }
-        "ldap_config_password.txt" { "LDAP config password" }
+        "ldap_gitlab_password.txt" { "LDAP gitlab password" }
+        "ldap_users_password.txt" { "LDAP users password" }
         "gitlab_root_password.txt" { "GitLab initial root password" }
         default { "Secret for $secret" }
     }

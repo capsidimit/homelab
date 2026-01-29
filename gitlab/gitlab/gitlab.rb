@@ -15,7 +15,7 @@ gitlab_rails['smtp_enable'] = true
 gitlab_rails['smtp_address'] = "maildev.example.com"
 gitlab_rails['smtp_openssl_verify_mode'] = 'peer'
 gitlab_rails['smtp_port'] = 1025
-gitlab_rails['smtp_tls'] = true
+gitlab_rails['smtp_ssl'] = true
 gitlab_rails['smtp_enable_starttls_auto'] = false
 
 # Container Registry settings
@@ -42,12 +42,12 @@ gitlab_rails['ldap_servers'] = {
     'host' => 'ldap.example.com',
     'port' => 636,
     'uid' => 'uid',
-    'bind_dn' => 'cn=admin,dc=ldap,dc=example,dc=com',
-    'base' => 'ou=users,dc=ldap,dc=example,dc=com',
+    'bind_dn' => 'uid=gitlab,ou=services,dc=ldap,dc=example,dc=com',
+    'base' => 'ou=people,dc=ldap,dc=example,dc=com',
     'group_base' => 'ou=groups,dc=ldap,dc=example,dc=com',
     'admin_group' => 'admins',
-    'password' => File.read('/run/secrets/ldap_admin_password'),
-    'encryption' => 'start_tls',
+    'password' => File.read('/run/secrets/ldap_gitlab_password'),
+    'encryption' => 'plain',
     'verify_certificates' => true,
     'tls_options' => {
         'ca_file' => '/etc/gitlab/ssl/ca.pem'

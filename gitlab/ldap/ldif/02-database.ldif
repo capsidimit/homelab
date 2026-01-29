@@ -1,0 +1,82 @@
+# -----------------------------------------------------------------------------
+# Backend Configuration: MDB (Memory-Mapped Database)
+# -----------------------------------------------------------------------------
+dn: olcDatabase={-1}frontend,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcFrontendConfig
+olcDatabase: {-1}frontend
+# Максимальный размер результатов поиска
+olcSizeLimit: 500
+# Требовать аутентификацию для всех операций
+olcRequires: authc
+
+# Config database (административная база)
+dn: olcDatabase={0}config,cn=config
+objectClass: olcDatabaseConfig
+olcDatabase: {0}config
+# Доступ только локально через rootdn (по вашему требованию нет доступа к cn=config)
+olcAccess: to * by * none
+
+
+# -----------------------------------------------------------------------------
+# Main Database: MDB Backend
+# -----------------------------------------------------------------------------
+dn: olcDatabase={1}mdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcMdbConfig
+olcDatabase: {1}mdb
+olcSuffix: dc=ldap,dc=example,dc=com
+olcRootDN: cn=admin,dc=ldap,dc=example,dc=com
+olcRootPW: {CRYPT}$(slappasswd -T /run/secrets/ldap_admin_password)
+olcDbDirectory: /var/lib/ldap
+olcDbMaxSize: 1073741824
+olcDbIndex: objectClass eq
+olcDbIndex: cn,uid eq,sub
+olcDbIndex: uidNumber,gidNumber eq
+olcDbIndex: member,memberOf eq
+olcDbIndex: mail eq,sub
+olcDbIndex: sn,givenName eq,sub
+olcDbMode: 0600
+
+
+# -----------------------------------------------------------------------------
+# Access Control Lists (ACL)
+# -----------------------------------------------------------------------------
+olcAccess: {0}to attrs=userPassword
+  by self write
+  by anonymous auth
+  by * none
+
+olcAccess: {1}to attrs=shadowLastChange
+  by self write
+  by * read
+
+olcAccess: {2}to dn.subtree="ou=people,dc=ldap,dc=example,dc=com"
+  by dn.exact="uid=gitlab,ou=services,dc=ldap,dc=example,dc=com" read
+  by dn.exact="cn=admin,dc=ldap,dc=example,dc=com" write
+  by self read
+  by * none
+
+olcAccess: {3}to dn.subtree="ou=groups,dc=ldap,dc=example,dc=com"
+  by dn.exact="uid=gitlab,ou=services,dc=ldap,dc=example,dc=com" read
+  by dn.exact="cn=admin,dc=ldap,dc=example,dc=com" write
+  by users read
+  by * none
+
+olcAccess: {4}to *
+  by dn.exact="cn=admin,dc=ldap,dc=example,dc=com" write
+  by users read
+  by * none
+
+# -----------------------------------------------------------------------------
+# Overlay: MemberOf
+# -----------------------------------------------------------------------------
+dn: olcOverlay={0}memberof,olcDatabase={1}mdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcMemberOf
+olcOverlay: {0}memberof
+olcMemberOfGroupAttr: member
+olcMemberOfMemberAttr: memberOf
+olcMemberOfRefInt: TRUE
+olcMemberOfDangling: ignore
+

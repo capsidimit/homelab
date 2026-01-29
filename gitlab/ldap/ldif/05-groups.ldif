@@ -1,0 +1,29 @@
+# Group: developers
+dn: cn=developers,ou=groups,dc=ldap,dc=example,dc=com
+objectClass: groupOfNames
+cn: developers
+description: Software developers at TechNova Corp
+member: uid=ivan.petrov,ou=people,dc=ldap,dc=example,dc=com
+member: uid=elena.sokolova,ou=people,dc=ldap,dc=example,dc=com
+
+# Group: testers
+dn: cn=testers,ou=groups,dc=ldap,dc=example,dc=com
+objectClass: groupOfNames
+cn: testers
+description: QA and testing team at TechNova Corp
+member: uid=dmitry.kuznetsov,ou=people,dc=ldap,dc=example,dc=com
+member: uid=anna.morozova,ou=people,dc=ldap,dc=example,dc=com
+
+# Group: admins
+dn: cn=admins,ou=groups,dc=ldap,dc=example,dc=com
+objectClass: groupOfNames
+cn: admins
+description: System and LDAP administrators for TechNova Corp
+member: uid=sergei.volodin,ou=people,dc=ldap,dc=example,dc=com
+
+# Group: executives
+dn: cn=executives,ou=groups,dc=ldap,dc=example,dc=com
+objectClass: groupOfNames
+cn: executives
+description: Executive leadership of TechNova Corp
+member: uid=oleg.fedorov,ou=people,dc=ldap,dc=example,dc=com
