@@ -8,8 +8,9 @@ services:
       - "../tools:/tools:ro"
     command: >
       /bin/sh -c "apk add --no-cache openssl bash && \
-      bash /tools/generate-certs.sh --log-level DEBUG --certs-dir /certs gitlab@gitlab.example.com,registry.example.com maildev@maildev.example.com ldap@ldap.example.com phpldapadmin@phpldapadmin.example.com && \
-      chown 1000:1000 -R /certs && \
+      bash /tools/generate-certs.sh --log-level DEBUG --certs-dir /certs gitlab@gitlab.example.com,registry.example.com maildev@maildev.example.com openldap@ldap.example.com && \
+      bash /tools/generate-certs.sh --log-level DEBUG --certs-dir /certs/phpldapadmin phpldapadmin@phpldapadmin.example.com openldap@ldap.example.com && \
+      chown 1001:1001 -R /certs/openldap && \
       exit 0"
     
   # This is GITLAB Server instance
@@ -110,6 +111,8 @@ services:
     env_file:
       - ./ldap/ldap.env
     environment:
+      BITNAMI_QUIET: "false"
+      BITNAMI_DEBUG: "true"
       LDAP_ROOT: "dc=ldap,dc=example,dc=com"
       LDAP_ORGANISATION: "TechNova Corp"
       LDAP_DOMAIN: "ldap.example.com"
@@ -120,6 +123,7 @@ services:
       LDAP_TLS_CERT_FILE: /opt/bitnami/openldap/certs/cert.pem
       LDAP_TLS_KEY_FILE: /opt/bitnami/openldap/certs/key.pem
       LDAP_TLS_CA_FILE: /opt/bitnami/openldap/certs/ca.pem
+      LDAP_EXTRA_SCHEMAS: "cosine, inetorgperson, nis"
     secrets:
       - ldap_admin_password
       - ldap_gitlab_password
@@ -132,35 +136,38 @@ services:
     stdin_open: true
     volumes:
       - "ldap-data:/bitnami/openldap"
-      - "./certs/ldap:/opt/bitnami/openldap/certs:ro"
-      - "./ldap/ldif:/ldifs"
+      - "./certs/openldap:/opt/bitnami/openldap/certs"
+      - "./ldap/ldifs:/ldifs:ro"
+      - "./ldap/init:/docker-entrypoint-initdb.d/00-custom"
     ports:
-      - "1636:1636"
+      - "636:1636"
     depends_on:
       init-certs:
         condition: service_completed_successfully
 
   phpldapadmin:
-    image: phpldapadmin/phpldapadmin:2.3.8
+    image: osixia/phpldapadmin:0.9.0
     restart: unless-stopped
     container_name: phpldapadmin
     environment:
-      PHPLDAPADMIN_LDAP_HOSTS: "#PYTHON2BASH:[{'openldap': [{'server': [{'tls': True}]}]}]"
+      PHPLDAPADMIN_LDAP_HOSTS: "#PYTHON2BASH:[{'ldaps://openldap:1636': [{'login': [{'bind_id': 'cn=admin,dc=ldap,dc=example,dc=com'}]}]}]"
       PHPLDAPADMIN_LDAP_CLIENT_TLS: "true"
       PHPLDAPADMIN_LDAP_CLIENT_TLS_REQCERT: "allow"
+      PHPLDAPADMIN_LDAP_CLIENT_TLS_CRT_FILENAME: "cert.pem"
+      PHPLDAPADMIN_LDAP_CLIENT_TLS_KEY_FILENAME: "key.pem"
       PHPLDAPADMIN_LDAP_CLIENT_TLS_CA_CRT_FILENAME: "ca.pem"
       PHPLDAPADMIN_HTTPS: "true"
       PHPLDAPADMIN_HTTPS_CRT_FILENAME: "cert.pem"
       PHPLDAPADMIN_HTTPS_KEY_FILENAME: "key.pem"
       PHPLDAPADMIN_HTTPS_CA_CRT_FILENAME: "ca.pem"
     ports:
-      - "8080:8080"
+      - "8443:443"
     depends_on:
       openldap:
         condition: service_started
     volumes:
-      - "./certs/phpldapadmin:/container/service/phpldapadmin/assets/apache2/certs:ro"
-      - "./certs/ldap:/container/service/ldap-client/assets/certs:ro"
+      - "./certs/phpldapadmin/phpldapadmin:/container/service/phpldapadmin/assets/apache2/certs"
+      - "./certs/phpldapadmin/openldap:/container/service/ldap-client/assets/certs"
     networks:
       net:
         aliases:

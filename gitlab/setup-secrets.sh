@@ -53,7 +53,7 @@ for secret in "${REQUIRED_SECRETS[@]}"; do
     echo
     
     echo "$password" > "$secret_path"
-    chmod 600 "$secret_path"
+    chmod 640 "$secret_path"
     echo "Created: $secret"
 done
 
