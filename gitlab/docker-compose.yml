@@ -83,7 +83,7 @@ services:
       - 1080:1080 # maildev - web application
       - 1025:1025 # will use 'mail:1025' to send emails
     environment:
-      NODE_EXTRA_CA_CERTS: /etc/maildev/ssl/ca.crt
+      NODE_EXTRA_CA_CERTS: /etc/maildev/ssl/ca.pem
       MAILDEV_HTTPS: "true"
       MAILDEV_HTTPS_CERT: /etc/maildev/ssl/cert.pem
       MAILDEV_HTTPS_KEY: /etc/maildev/ssl/key.pem

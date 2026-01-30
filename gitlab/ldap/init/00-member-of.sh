@@ -10,7 +10,8 @@ dn: cn=module{1},cn=config
 changetype: add
 objectClass: olcModuleList
 cn: module{1}
-olcModuleLoad: memberof
+olcModuleLoad: {0}memberof
+olcModuleLoad: {1}refint
 olcModulePath: /opt/bitnami/openldap/lib/openldap
 
 dn: olcOverlay=memberof,olcDatabase={2}mdb,cn=config
@@ -23,13 +24,6 @@ olcMemberOfRefInt: TRUE
 olcMemberOfGroupOC: groupOfNames
 olcMemberOfMemberAD: member
 olcMemberOfMemberOfAD: memberOf
-
-dn: cn=module{2},cn=config
-changetype: add
-objectClass: olcModuleList
-cn: module{2}
-olcmoduleload: refint
-olcModulePath: /opt/bitnami/openldap/lib/openldap
 
 dn: olcOverlay={1}refint,olcDatabase={2}mdb,cn=config
 changetype: add
