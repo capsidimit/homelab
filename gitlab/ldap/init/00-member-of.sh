@@ -7,11 +7,14 @@ set -e
 # ensure cn=module{N},cn=config and cn: module{N} match eachother and do not conflict with existing modules. Run `slapcat -F /opt/bitnami/openldap/etc/slapd.d -b cn=config | grep 'cn=module'` to check existing modules.
 cat > /tmp/memberof-overlay.ldif << 'EOF'
 dn: cn=module{1},cn=config
+changetype: add
 objectClass: olcModuleList
 cn: module{1}
 olcModuleLoad: memberof
+olcModulePath: /opt/bitnami/openldap/lib/openldap
 
 dn: olcOverlay=memberof,olcDatabase={2}mdb,cn=config
+changetype: add
 objectClass: olcOverlayConfig
 objectClass: olcMemberOf
 olcOverlay: memberof
@@ -20,6 +23,22 @@ olcMemberOfRefInt: TRUE
 olcMemberOfGroupOC: groupOfNames
 olcMemberOfMemberAD: member
 olcMemberOfMemberOfAD: memberOf
+
+dn: cn=module{2},cn=config
+changetype: add
+objectClass: olcModuleList
+cn: module{2}
+olcmoduleload: refint
+olcModulePath: /opt/bitnami/openldap/lib/openldap
+
+dn: olcOverlay={1}refint,olcDatabase={2}mdb,cn=config
+changetype: add
+objectClass: olcConfig
+objectClass: olcOverlayConfig
+objectClass: olcRefintConfig
+objectClass: top
+olcOverlay: {1}refint
+olcRefintAttribute: memberof member manager owner
 EOF
 
 # Apply the LDIF to enable memberOf overlay
@@ -31,11 +50,10 @@ then
     echo "MemberOf overlay is already configured."
     exit 0
 else
-    slapadd -F /opt/bitnami/openldap/etc/slapd.d -b cn=config -l /tmp/memberof-overlay.ldif || {
+    slapmodify -F /opt/bitnami/openldap/etc/slapd.d -b cn=config -l /tmp/memberof-overlay.ldif || {
         echo "NOTICE: slapadd failed to load memberOf overlay. Check the cn=module{N} with \"slapcat -F /opt/bitnami/openldap/etc/slapd.d -b cn=config |grep 'cn=module'\""
         exit 1
     }
 fi
 
 echo "MemberOf overlay has been configured."
-
