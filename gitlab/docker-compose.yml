@@ -38,9 +38,6 @@ services:
       start_period: 15m
     env_file:
       - ./gitlab/gitlab.env
-    secrets:
-      - ldap_gitlab_password
-      - gitlab_root_password
     ports:
       - "80:80"
       - "443:443"
@@ -126,8 +123,6 @@ services:
       LDAP_EXTRA_SCHEMAS: "cosine, inetorgperson, nis"
     secrets:
       - ldap_admin_password
-      - ldap_gitlab_password
-      - ldap_users_password
     tty: true
     networks:
       net:
@@ -138,7 +133,7 @@ services:
       - "ldap-data:/bitnami/openldap"
       - "./certs/openldap:/opt/bitnami/openldap/certs"
       - "./ldap/ldifs:/ldifs:ro"
-      - "./ldap/init:/docker-entrypoint-initdb.d/00-custom"
+      - "./ldap/init:/docker-entrypoint-initdb.d"
     ports:
       - "636:1636"
     depends_on:
@@ -177,12 +172,6 @@ services:
 secrets:
   ldap_admin_password:
     file: ./secrets/ldap_admin_password.txt
-  ldap_gitlab_password:
-    file: ./secrets/ldap_gitlab_password.txt
-  ldap_users_password:
-    file: ./secrets/ldap_users_password.txt
-  gitlab_root_password:
-    file: ./secrets/gitlab_root_password.txt
 
 # Network
 networks:

@@ -1,55 +1,105 @@
-# Employee: Ivan Petrov
+# ------------------------------------------------------------------------------
+# DEVELOPERS GROUP MEMBERS
+# ------------------------------------------------------------------------------
+
+# User: Ivan Petrov - Senior Software Developer
 dn: uid=ivan.petrov,ou=users,dc=ldap,dc=example,dc=com
 objectClass: inetOrgPerson
 uid: ivan.petrov
 cn: Ivan Petrov
 sn: Petrov
 givenName: Ivan
-mail: ivan.petrov@technova.ru
-title: Senior Software Engineer
-employeeNumber: TN-1001
-employeeType: former
-description: Last active: 2024-03-15 (Company dissolution)
-userPassword: {CRYPT}$(slappasswd -T /run/secrets/ldap_users_password)
+displayName: Ivan Petrov
+mail: ivan.petrov@example.com
+title: Senior Software Developer
+employeeNumber: EMP001
+employeeType: Full-time
+description: Senior developer specializing in backend systems and microservices architecture
+userPassword: qwerty1234
 
-# Employee: Elena Sokolova
+# User: Elena Sokolova - Software Developer
 dn: uid=elena.sokolova,ou=users,dc=ldap,dc=example,dc=com
 objectClass: inetOrgPerson
 uid: elena.sokolova
 cn: Elena Sokolova
 sn: Sokolova
 givenName: Elena
-mail: elena.sokolova@technova.ru
-title: QA Team Lead
-employeeNumber: TN-1045
-employeeType: former
-description: Last active: 2024-02-28 (Company dissolution)
-userPassword: {CRYPT}$(slappasswd -T /run/secrets/ldap_users_password)
+displayName: Elena Sokolova
+mail: elena.sokolova@example.com
+title: Software Developer
+employeeNumber: EMP002
+employeeType: Full-time
+description: Full-stack developer with expertise in React and Node.js
+userPassword: qwerty1234
 
-# Employee: Mikhail Volkov
-dn: uid=mikhail.volkov,ou=users,dc=ldap,dc=example,dc=com
+# ------------------------------------------------------------------------------
+# TESTERS GROUP MEMBERS
+# ------------------------------------------------------------------------------
+
+# User: Dmitry Kuznetsov - QA Engineer
+dn: uid=dmitry.kuznetsov,ou=users,dc=ldap,dc=example,dc=com
 objectClass: inetOrgPerson
-uid: mikhail.volkov
-cn: Mikhail Volkov
-sn: Volkov
-givenName: Mikhail
-mail: m.volkov@technova.ru
+uid: dmitry.kuznetsov
+cn: Dmitry Kuznetsov
+sn: Kuznetsov
+givenName: Dmitry
+displayName: Dmitry Kuznetsov
+mail: dmitry.kuznetsov@example.com
+title: QA Engineer
+employeeNumber: EMP003
+employeeType: Full-time
+description: Quality assurance engineer focusing on manual and automated testing
+userPassword: qwerty1234
+
+# User: Anna Morozova - Test Automation Engineer
+dn: uid=anna.morozova,ou=users,dc=ldap,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: anna.morozova
+cn: Anna Morozova
+sn: Morozova
+givenName: Anna
+displayName: Anna Morozova
+mail: anna.morozova@example.com
+title: Test Automation Engineer
+employeeNumber: EMP004
+employeeType: Full-time
+description: Test automation specialist with experience in Selenium and pytest
+userPassword: qwerty1234
+
+# ------------------------------------------------------------------------------
+# ADMINS GROUP MEMBERS
+# ------------------------------------------------------------------------------
+
+# User: Sergei Volodin - System Administrator
+dn: uid=sergei.volodin,ou=users,dc=ldap,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: sergei.volodin
+cn: Sergei Volodin
+sn: Volodin
+givenName: Sergei
+displayName: Sergei Volodin
+mail: sergei.volodin@example.com
+title: System Administrator
+employeeNumber: EMP005
+employeeType: Full-time
+description: Senior sysadmin responsible for LDAP, infrastructure, and security
+userPassword: qwerty1234
+
+# ------------------------------------------------------------------------------
+# EXECUTIVES GROUP MEMBERS
+# ------------------------------------------------------------------------------
+
+# User: Oleg Fedorov - Chief Technology Officer
+dn: uid=oleg.fedorov,ou=users,dc=ldap,dc=example,dc=com
+objectClass: inetOrgPerson
+uid: oleg.fedorov
+cn: Oleg Fedorov
+sn: Fedorov
+givenName: Oleg
+displayName: Oleg Fedorov
+mail: oleg.fedorov@example.com
 title: Chief Technology Officer
-employeeNumber: TN-001
-employeeType: former-executive
-description: Final login: 2024-01-10 (Asset seizure proceedings)
-userPassword: {CRYPT}$(slappasswd -T /run/secrets/ldap_users_password)
-
-# Employee: Anastasia Orlova
-dn: uid=anastasia.orlova,ou=users,dc=ldap,dc=example,dc=com
-objectClass: inetOrgPerson
-uid: anastasia.orlova
-cn: Anastasia Orlova
-sn: Orlova
-givenName: Anastasia
-mail: a.orlova@technova.ru
-title: DevOps Specialist
-employeeNumber: TN-2078
-employeeType: terminated
-description: Account frozen 2023-11-30 (Regulatory compliance hold)
-userPassword: {CRYPT}$(slappasswd -T /run/secrets/ldap_users_password)
+employeeNumber: EMP006
+employeeType: Executive
+description: CTO overseeing all technical operations and strategic technology initiatives
+userPassword: qwerty1234

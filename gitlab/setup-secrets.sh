@@ -8,10 +8,7 @@ echo "============================"
 
 SECRETS_DIR="secrets"
 REQUIRED_SECRETS=(
-    "ldap_admin_password.txt" 
-    "ldap_gitlab_password.txt"
-    "ldap_users_password.txt"
-    "gitlab_root_password.txt"
+    "ldap_admin_password.txt"
 )
 
 # Create secrets directory if it doesn't exist
@@ -32,15 +29,6 @@ for secret in "${REQUIRED_SECRETS[@]}"; do
     case "$secret" in
         "ldap_admin_password.txt")
             description="LDAP admin password"
-            ;;
-        "ldap_gitlab_password.txt")
-            description="LDAP gitlab password"
-            ;;
-        "ldap_users_password.txt")
-            description="LDAP users passwords"
-            ;;
-        "gitlab_root_password.txt")
-            description="GitLab initial root password"
             ;;
         *)
             description="Secret for $secret"

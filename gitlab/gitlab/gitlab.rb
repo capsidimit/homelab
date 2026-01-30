@@ -38,33 +38,33 @@ gitlab_rails['lfs_enabled'] = true
 gitlab_rails['ldap_enabled'] = true
 gitlab_rails['ldap_servers'] = {
     'main' => {
-    'label' => 'TechNova Corp LDAP',
-    'host' => 'ldap.example.com',
-    'port' => 636,
-    'uid' => 'uid',
-    'bind_dn' => 'uid=gitlab,ou=services,dc=ldap,dc=example,dc=com',
-    'base' => 'ou=users,dc=ldap,dc=example,dc=com',
-    'group_base' => 'ou=groups,dc=ldap,dc=example,dc=com',
-    'admin_group' => 'admins',
-    'password' => File.read('/run/secrets/ldap_gitlab_password'),
-    'encryption' => 'plain',
-    'verify_certificates' => true,
-    'tls_options' => {
-        'ca_file' => '/etc/gitlab/ssl/ca.pem'
-    },
-    'timeout' => 10,
-    'active_directory' => false,
-    'user_filter' => '',
-    'lowercase_usernames' => false,
-    'allow_username_or_email_login' => true,
-    'block_auto_created_users' => false,
-    'attributes' => {
-        'username' => ['uid'],
-        'email' => ['mail'],
-        'name' => 'displayName',
-        'first_name' => 'givenName',
-        'last_name' => 'sn'
-    }
+        'label' => 'TechNova Corp LDAP',
+        'host' => 'openldap',
+        'port' => 1636,
+        'uid' => 'uid',
+        'bind_dn' => 'uid=gitlab,ou=services,dc=ldap,dc=example,dc=com',
+        'base' => 'ou=users,dc=ldap,dc=example,dc=com',
+        'group_base' => 'ou=groups,dc=ldap,dc=example,dc=com',
+        'admin_group' => 'admins',
+        'password' => 'gitlab',
+        'encryption' => 'simple_tls',
+        'verify_certificates' => true,
+        'tls_options' => {
+            'ca_file' => '/etc/gitlab/ssl/ca.pem'
+        },
+        'timeout' => 10,
+        'active_directory' => false,
+        'user_filter' => '',
+        'lowercase_usernames' => false,
+        'allow_username_or_email_login' => true,
+        'block_auto_created_users' => false,
+        'attributes' => {
+            'username' => ['uid'],
+            'email' => ['mail'],
+            'name' => 'displayName',
+            'first_name' => 'givenName',
+            'last_name' => 'sn'
+        }
     }
 }
 gitlab_rails['ldap_sync_worker_cron'] = "0 */12 * * *"
